@@ -210,13 +210,40 @@
 
 
         <div id="cropping-section" class="bg-white p-4 rounded-lg shadow hidden">
-            <h2 class="text-lg font-semibold mb-3 text-gray-700">1. 書類の四隅を指定</h2>
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">1. 台紙の角を指定</h2>
             <div id="imageContainer" class="relative w-full max-w-lg mx-auto mb-3">
                 <canvas id="imageCanvas"></canvas>
             </div>
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <button id="detectCornersButton" class="btn btn-warning w-full py-3" disabled>自動検出</button>
                 <button id="resetMarkersButton" class="btn btn-secondary w-full py-3" disabled>マーカーリセット</button>
+            </div>
+            <!-- ここに新しいUI要素を追加 -->
+            <div class="mb-4">
+                <button id="toggleDetectionParamsButton" class="btn btn-secondary w-full py-2.5 text-sm font-semibold">検出パラメータを表示/非表示</button>
+                <div id="detectionParamsSection" class="hidden mt-3 space-y-3 bg-gray-100 p-3 rounded-md">
+                    <h3 class="text-md font-semibold text-gray-700">自動検出パラメータ</h3>
+                    <div>
+                        <label for="cannyThreshold1Slider" class="block text-sm font-medium text-gray-700">Canny Threshold 1: <span id="cannyThreshold1Value">75</span></label>
+                        <input type="range" id="cannyThreshold1Slider" min="0" max="255" value="75" class="w-full touch-manipulation">
+                    </div>
+                    <div>
+                        <label for="cannyThreshold2Slider" class="block text-sm font-medium text-gray-700">Canny Threshold 2: <span id="cannyThreshold2Value">150</span></label>
+                        <input type="range" id="cannyThreshold2Slider" min="0" max="255" value="150" class="w-full touch-manipulation">
+                    </div>
+                     <div>
+                        <label for="dilateKernelSizeSlider" class="block text-sm font-medium text-gray-700">膨張カーネルサイズ: <span id="dilateKernelSizeValue">3</span></label>
+                        <input type="range" id="dilateKernelSizeSlider" min="1" max="10" value="3" step="1" class="w-full touch-manipulation">
+                    </div>
+                     <div>
+                        <label for="minAreaRatioSlider" class="block text-sm font-medium text-gray-700">最小面積比率 (%): <span id="minAreaRatioValue">0.5</span></label>
+                        <input type="range" id="minAreaRatioSlider" min="0.1" max="10" value="0.5" step="0.1" class="w-full touch-manipulation">
+                    </div>
+                     <div>
+                        <label for="significantAreaRatioSlider" class="block text-sm font-medium text-gray-700">有効面積比率 (%): <span id="significantAreaRatioValue">5</span></label>
+                        <input type="range" id="significantAreaRatioSlider" min="1" max="20" value="5" step="1" class="w-full touch-manipulation">
+                    </div>
+                </div>
             </div>
             <button id="correctButton" class="btn btn-primary w-full py-3" disabled>台形補正を実行</button>
         </div>
@@ -228,12 +255,12 @@
             <div class="mb-4">
                 <label for="aspectRatioSelect" class="block text-sm font-medium text-gray-700 mb-1">アスペクト比:</label>
                 <select id="aspectRatioSelect" class="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:ring-gray-500 focus:border-gray-500 custom-select">
-                    <option value="A4L">A4 横長 (デフォルト)</option>
-                    <option value="A4P">A4 縦長</option>
+                    <option value="A4L">A4 横 (デフォルト)</option>
+                    <option value="A4P">A4 たて</option>
                     <option value="16:9L">16:9 (横)</option>
-                    <option value="9:16P">9:16 (縦)</option>
+                    <option value="9:16P">9:16 (たて)</option>
                     <option value="4:3L">4:3 (横)</option>
-                    <option value="3:4P">3:4 (縦)</option>
+                    <option value="3:4P">3:4 (たて)</option>
                     <option value="1:1S">1:1 (スクエア)</option>
                     <option value="original">元画像のアスペクト比</option>
                 </select>
@@ -318,6 +345,22 @@
         const aspectRatioSelect = document.getElementById('aspectRatioSelect');
         const magnifier = document.getElementById('magnifier');
         const magnifierCanvas = document.getElementById('magnifierCanvas');
+
+        // New Detection Parameter Elements
+        const toggleDetectionParamsButton = document.getElementById('toggleDetectionParamsButton');
+        const detectionParamsSection = document.getElementById('detectionParamsSection');
+        const cannyThreshold1Slider = document.getElementById('cannyThreshold1Slider');
+        const cannyThreshold2Slider = document.getElementById('cannyThreshold2Slider');
+        const dilateKernelSizeSlider = document.getElementById('dilateKernelSizeSlider');
+        const minAreaRatioSlider = document.getElementById('minAreaRatioSlider');
+        const significantAreaRatioSlider = document.getElementById('significantAreaRatioSlider');
+
+        const cannyThreshold1Value = document.getElementById('cannyThreshold1Value');
+        const cannyThreshold2Value = document.getElementById('cannyThreshold2Value');
+        const dilateKernelSizeValue = document.getElementById('dilateKernelSizeValue');
+        const minAreaRatioValue = document.getElementById('minAreaRatioValue');
+        const significantAreaRatioValue = document.getElementById('significantAreaRatioValue');
+
 
         // Sliders and value displays
         const brightnessSlider = document.getElementById('brightnessSlider');
@@ -443,7 +486,14 @@
 
                     if (cvReady && srcMat) {
                         showLoader(true);
-                        const success = await runCornerDetectionLogic(false);
+                        // 初期ロード時の自動検出はデフォルトパラメータを使用
+                        const success = await runCornerDetectionLogic(false, {
+                            cannyThreshold1: parseInt(cannyThreshold1Slider.value),
+                            cannyThreshold2: parseInt(cannyThreshold2Slider.value),
+                            dilateKernelSize: parseInt(dilateKernelSizeSlider.value),
+                            minAreaRatio: parseFloat(minAreaRatioSlider.value),
+                            significantAreaRatio: parseFloat(significantAreaRatioSlider.value)
+                        });
                         showLoader(false);
                         if (success) {
                             showUserMessage("四隅を自動検出しました。");
@@ -508,7 +558,7 @@
 
             const canvasRect = imageCanvas.getBoundingClientRect();
             const scaleXLogicalToDisplay = canvasRect.width / imageCanvas.width;
-            const scaleYLogicalToDisplay = canvasRect.height / imageCanvas.height;
+            const scaleYLogicalToDisplay = canvasRect.height / imageCanvas.height; // Fix: Should be imageCanvas.height
             const displayXOnCanvas = logicalX * scaleXLogicalToDisplay;
             const displayYOnCanvas = logicalY * scaleYLogicalToDisplay;
             const styleX = imageCanvas.offsetLeft + displayXOnCanvas;
@@ -855,12 +905,12 @@
                 applyAllAdjustments(correctedMat, previewCanvas, true);
             }
         });
-        brightnessSlider.addEventListener('input', () => { brightnessValue.textContent = brightnessSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
-        contrastSlider.addEventListener('input', () => { contrastValue.textContent = parseFloat(contrastSlider.value).toFixed(2); if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
-        saturationSlider.addEventListener('input', () => { saturationValue.textContent = parseFloat(saturationSlider.value).toFixed(2); if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
-        sharpenSlider.addEventListener('input', () => { sharpenValue.textContent = sharpenSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+        brightnessSlider.addEventListener('change', () => { brightnessValue.textContent = brightnessSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+        contrastSlider.addEventListener('change', () => { contrastValue.textContent = parseFloat(contrastSlider.value).toFixed(2); if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+        saturationSlider.addEventListener('change', () => { saturationValue.textContent = parseFloat(saturationSlider.value).toFixed(2); if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+        sharpenSlider.addEventListener('change', () => { sharpenValue.textContent = sharpenSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
         grayscaleToggle.addEventListener('change', () => {if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);});
-        morphologySlider.addEventListener('input', () => {
+        morphologySlider.addEventListener('change', () => {
             const val = parseInt(morphologySlider.value);
             let text = "なし";
             if (val >= 1 && val <= 5) text = `侵食 (${val})`;
@@ -876,7 +926,30 @@
             thresholdSlider.disabled = otsuToggle.checked;
             if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
         });
-        thresholdSlider.addEventListener('input', () => { thresholdValue.textContent = thresholdSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+        thresholdSlider.addEventListener('change', () => { thresholdValue.textContent = thresholdSlider.value; if(correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true); });
+
+        // Event Listener for toggling detection parameters
+        toggleDetectionParamsButton.addEventListener('click', () => {
+            detectionParamsSection.classList.toggle('hidden');
+        });
+
+        // New Detection Parameter Slider Event Listeners
+        cannyThreshold1Slider.addEventListener('input', () => { // inputイベントでリアルタイム更新
+            cannyThreshold1Value.textContent = cannyThreshold1Slider.value;
+        });
+        cannyThreshold2Slider.addEventListener('input', () => { // inputイベントでリアルタイム更新
+            cannyThreshold2Value.textContent = cannyThreshold2Slider.value;
+        });
+         dilateKernelSizeSlider.addEventListener('input', () => { // inputイベントでリアルタイム更新
+            dilateKernelSizeValue.textContent = dilateKernelSizeSlider.value;
+        });
+         minAreaRatioSlider.addEventListener('input', () => { // inputイベントでリアルタイム更新
+            minAreaRatioValue.textContent = parseFloat(minAreaRatioSlider.value).toFixed(1);
+        });
+         significantAreaRatioSlider.addEventListener('input', () => { // inputイベントでリアルタイム更新
+            significantAreaRatioValue.textContent = significantAreaRatioSlider.value;
+        });
+
 
         // --- Download (High Resolution) ---
         downloadButton.addEventListener('click', async () => {
@@ -969,7 +1042,7 @@
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                            URL.revokeObjectURL(blobUrl);
+                            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
                             finalizeDownloadProcess(true);
                         } catch (e) {
                             showUserMessage("画像ダウンロード中にエラーが発生しました: " + e.message, true);
@@ -988,13 +1061,14 @@
             }
         });
 
-        async function runCornerDetectionLogic(showMessages = true) {
+        async function runCornerDetectionLogic(showMessages = true, params = {}) { // params引数を追加
             if (!srcMat || !cvReady) {
                 if (showMessages) showUserMessage("画像未読み込み、またはOpenCV準備未完了のため自動検出できません。", true);
                 return false;
             }
             try {
-                const detectedPointsOriginal = autoDetectCornersOpenCV();
+                // autoDetectCornersOpenCVにパラメータを渡す
+                const detectedPointsOriginal = autoDetectCornersOpenCV(params);
                 if (detectedPointsOriginal && detectedPointsOriginal.length === 4) {
                     const detectedPointsLogicalCanvas = detectedPointsOriginal.map(p => ({ x: p.x * imageScale, y: p.y * imageScale }));
                     const orderedCanvasPoints = orderPointsForTransform(detectedPointsLogicalCanvas);
@@ -1016,6 +1090,7 @@
             }
         }
 
+        // 自動検出ボタンクリック時にパラメータを適用して検出を実行
         detectCornersButton.addEventListener('click', async () => {
             if (!srcMat || !cvReady) {
                 showUserMessage("画像が読み込まれていないか、OpenCVが準備できていません。", true); return;
@@ -1023,7 +1098,19 @@
             showLoader(true);
             detectCornersButton.disabled = true; detectCornersButton.textContent = "検出中...";
             await new Promise(resolve => setTimeout(resolve, 50));
-            const success = await runCornerDetectionLogic(true);
+
+            // スライダーから現在のパラメータ値を取得
+            const detectionParams = {
+                cannyThreshold1: parseInt(cannyThreshold1Slider.value),
+                cannyThreshold2: parseInt(cannyThreshold2Slider.value),
+                dilateKernelSize: parseInt(dilateKernelSizeSlider.value),
+                minAreaRatio: parseFloat(minAreaRatioSlider.value),
+                significantAreaRatio: parseFloat(significantAreaRatioSlider.value)
+            };
+
+            // パラメータを渡して検出ロジックを実行
+            const success = await runCornerDetectionLogic(true, detectionParams); // runCornerDetectionLogicにパラメータを渡す
+
             if (success) {
                 showUserMessage("四隅を自動検出しました。");
             } else {
@@ -1033,7 +1120,19 @@
             detectCornersButton.disabled = false; detectCornersButton.textContent = "自動検出";
         });
 
-        function autoDetectCornersOpenCV() {
+
+        function autoDetectCornersOpenCV(params = {}) { // params引数を追加
+            // デフォルトパラメータを設定
+            const defaultParams = {
+                cannyThreshold1: 75,
+                cannyThreshold2: 150,
+                dilateKernelSize: 3,
+                minAreaRatio: 0.5, // %
+                significantAreaRatio: 5 // %
+            };
+            // 渡されたパラメータでデフォルトを上書き
+            const currentParams = { ...defaultParams, ...params };
+
             // Matオブジェクトの宣言。tryブロック内で初期化し、finallyブロックで解放します。
             let gray = null, blurred = null, edges = null, dilated_edges = null;
             let contours = null, hierarchy = null;
@@ -1048,25 +1147,19 @@
                 // カーネルサイズは奇数。効果を見ながら調整 (例: 3,3 or 5,5 or 7,7)
                 // 数値が大きいほど強くぼかす。
                 blurred = new cv.Mat();
+                // ガウシアンブラーのカーネルサイズは固定 (5,5) のままにしておく。
+                // 調整対象はCanny, 膨張, 面積フィルタリングとする。
                 cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
 
                 // 2. Cannyエッジ検出
                 edges = new cv.Mat();
-                // threshold1, threshold2 は非常に重要なパラメータで、画像の内容によって調整が必要です。
-                // threshold1: これより勾配が小さいエッジは無視される。
-                // threshold2: これより勾配が大きいエッジは確実なエッジとして採用される。
-                // threshold1 < 勾配 < threshold2 のエッジは、確実なエッジに繋がっていれば採用される。
-                // 白い紙と暗いテーブルの場合、コントラストは比較的高いため、中程度の値で試します。
-                // 例: (50, 100), (75, 150), (100, 200) など。
-                // apertureSizeはSobelオペレータのサイズで、通常3。L2gradientは勾配計算方法。
-                cv.Canny(blurred, edges, 75, 150, 3, false);
+                // パラメータを使用
+                cv.Canny(blurred, edges, currentParams.cannyThreshold1, currentParams.cannyThreshold2, 3, false);
 
                 // 3. 膨張処理でエッジを連結し、輪郭を閉じやすくする
                 dilated_edges = new cv.Mat();
-                // カーネルの形状とサイズ、イテレーション回数が調整ポイント。
-                // サイズが大きいほど、またイテレーションが多いほど、エッジは太く連結されやすくなりますが、
-                // 細かい形状が失われる可能性もあります。
-                let dilateKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+                // パラメータを使用
+                let dilateKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(currentParams.dilateKernelSize, currentParams.dilateKernelSize));
                 cv.dilate(edges, dilated_edges, dilateKernel, new cv.Point(-1, -1), 1); // 1 iteration
                 dilateKernel.delete(); // カーネルは使用後速やかに解放
 
@@ -1086,25 +1179,23 @@
                     let area = cv.contourArea(cnt);
 
                     // 面積によるフィルタリング (小さすぎる輪郭を除外)
-                    // 画像全体の面積に対する割合で閾値を設定。例: 画像面積の0.5%未満は無視。
-                    // この値は、画像中の紙のサイズやノイズ量に応じて調整。
-                    let minAreaFilterThreshold = (srcMat.cols * srcMat.rows) / 200; // 0.5%
+                    // パラメータを使用
+                    let minAreaFilterThreshold = (srcMat.cols * srcMat.rows) * (currentParams.minAreaRatio / 100); // %を面積に変換
                     if (area < minAreaFilterThreshold) {
                         // cnt は MatVector が管理しているので、ここでは delete しない
                         continue;
                     }
 
                     let peri = cv.arcLength(cnt, true);
-                    // approxPolyDPで輪郭を多角形近似。epsilonは近似の精度。
-                    // 周囲長に対する割合で設定するのが一般的 (例: 0.01 * peri から 0.05 * peri)
+                    // approxPolyDPのepsilonは周囲長に対する割合で固定 (0.02)
                     cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
 
                     // 四角形 (approx.rows === 4) で、かつ凸型 (cv.isContourConvex) で、
                     // かつ現在見つかっている最大の有効な輪郭より大きいか
                     if (approx.rows === 4 && cv.isContourConvex(approx) && area > maxArea) {
-                        // さらに、紙として妥当な最小面積を満たしているか (例: 画像全体の5%以上)
-                        // この閾値は、撮影条件（紙が画像に占める期待される割合）に応じて調整。
-                        let significantAreaThreshold = (srcMat.cols * srcMat.rows) / 20; // 5%
+                        // さらに、紙として妥当な最小面積を満たしているか
+                        // パラメータを使用
+                        let significantAreaThreshold = (srcMat.cols * srcMat.rows) * (currentParams.significantAreaRatio / 100); // %を面積に変換
                         if (area > significantAreaThreshold) {
                             maxArea = area;
                             // 検出された点の座標を格納 (data32Sは符号付き32bit整数)
@@ -1127,7 +1218,7 @@
                 console.error("Error in autoDetectCornersOpenCV:", err);
                 // エラー発生時は念のため確保したMatを解放しようと試みる
                 // (本来はfinallyで処理されるが、エラーの内容によっては到達しない可能性も考慮)
-                if (dilateKernel && !dilateKernel.isDeleted()) dilateKernel.delete(); // ループ内で作られた場合
+                // dilateKernel は try ブロック内でしか生成されないため、ここでは解放不要
                 return null;
             } finally {
                 // Matオブジェクトの解放
@@ -1169,6 +1260,13 @@
             morphologyValue.textContent = "なし";
             binarizationOptions.classList.toggle('hidden', !binarizationToggle.checked);
             thresholdSlider.disabled = otsuToggle.checked;
+
+            // 新しい検出パラメータスライダーの値表示を初期化
+            cannyThreshold1Value.textContent = cannyThreshold1Slider.value;
+            cannyThreshold2Value.textContent = cannyThreshold2Slider.value;
+            dilateKernelSizeValue.textContent = dilateKernelSizeSlider.value;
+            minAreaRatioValue.textContent = parseFloat(minAreaRatioSlider.value).toFixed(1);
+            significantAreaRatioValue.textContent = significantAreaRatioSlider.value;
         }
 
         if (typeof cv !== 'undefined' && typeof cv.onRuntimeInitialized !== 'undefined') {
