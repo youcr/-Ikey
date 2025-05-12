@@ -717,25 +717,24 @@ brightnessSlider.addEventListener('input', () => {
     updateSliderValueDisplay(brightnessSlider, brightnessValue);
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Brightness Slider
+const handleBrightnessDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+brightnessSlider.addEventListener('input', () => {
+    updateSliderValueDisplay(brightnessSlider, brightnessValue);
+});
 brightnessSlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    brightnessSlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    brightnessSlider.addEventListener('mousemove', handleBrightnessDrag);
 });
 brightnessSlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    brightnessSlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    brightnessSlider.addEventListener('touchmove', handleBrightnessDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 brightnessSlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    brightnessSlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    brightnessSlider.removeEventListener('mousemove', handleBrightnessDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 brightnessSlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    brightnessSlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    brightnessSlider.removeEventListener('touchmove', handleBrightnessDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
@@ -744,25 +743,24 @@ contrastSlider.addEventListener('input', () => {
     updateSliderValueDisplay(contrastSlider, contrastValue);
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Contrast Slider
+const handleContrastDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+contrastSlider.addEventListener('input', () => {
+    updateSliderValueDisplay(contrastSlider, contrastValue);
+});
 contrastSlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    contrastSlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    contrastSlider.addEventListener('mousemove', handleContrastDrag);
 });
 contrastSlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    contrastSlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    contrastSlider.addEventListener('touchmove', handleContrastDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 contrastSlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    contrastSlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    contrastSlider.removeEventListener('mousemove', handleContrastDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 contrastSlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    contrastSlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    contrastSlider.removeEventListener('touchmove', handleContrastDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
@@ -771,25 +769,24 @@ saturationSlider.addEventListener('input', () => {
     updateSliderValueDisplay(saturationSlider, saturationValue);
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Saturation Slider
+const handleSaturationDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+saturationSlider.addEventListener('input', () => {
+    updateSliderValueDisplay(saturationSlider, saturationValue);
+});
 saturationSlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    saturationSlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    saturationSlider.addEventListener('mousemove', handleSaturationDrag);
 });
 saturationSlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    saturationSlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    saturationSlider.addEventListener('touchmove', handleSaturationDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 saturationSlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    saturationSlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    saturationSlider.removeEventListener('mousemove', handleSaturationDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 saturationSlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    saturationSlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    saturationSlider.removeEventListener('touchmove', handleSaturationDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
@@ -798,25 +795,24 @@ sharpenSlider.addEventListener('input', () => {
     updateSliderValueDisplay(sharpenSlider, sharpenValue);
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Sharpen Slider
+const handleSharpenDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+sharpenSlider.addEventListener('input', () => {
+    updateSliderValueDisplay(sharpenSlider, sharpenValue);
+});
 sharpenSlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    sharpenSlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    sharpenSlider.addEventListener('mousemove', handleSharpenDrag);
 });
 sharpenSlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    sharpenSlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    sharpenSlider.addEventListener('touchmove', handleSharpenDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 sharpenSlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    sharpenSlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    sharpenSlider.removeEventListener('mousemove', handleSharpenDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 sharpenSlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    sharpenSlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    sharpenSlider.removeEventListener('touchmove', handleSharpenDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
@@ -825,25 +821,24 @@ morphologySlider.addEventListener('input', () => {
     updateSliderValueDisplay(morphologySlider, morphologyValue, true); // isMorphology = true
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Morphology Slider
+const handleMorphologyDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+morphologySlider.addEventListener('input', () => {
+    updateSliderValueDisplay(morphologySlider, morphologyValue, true); // isMorphology = true
+});
 morphologySlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    morphologySlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    morphologySlider.addEventListener('mousemove', handleMorphologyDrag);
 });
 morphologySlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    morphologySlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    morphologySlider.addEventListener('touchmove', handleMorphologyDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 morphologySlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    morphologySlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    morphologySlider.removeEventListener('mousemove', handleMorphologyDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 morphologySlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    morphologySlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    morphologySlider.removeEventListener('touchmove', handleMorphologyDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
@@ -852,25 +847,24 @@ thresholdSlider.addEventListener('input', () => {
     updateSliderValueDisplay(thresholdSlider, thresholdValue, false, true); // isThreshold = true
     // ドラッグ中のプレビュー更新はmousedown/touchstartと組み合わせる
 });
+// Threshold Slider
+const handleThresholdDrag = () => applyAllAdjustments(correctedMat, previewCanvas, true);
+thresholdSlider.addEventListener('input', () => {
+    updateSliderValueDisplay(thresholdSlider, thresholdValue, false, true); // isThreshold = true
+});
 thresholdSlider.addEventListener('mousedown', () => {
-    // ドラッグ中はmousemoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    thresholdSlider.addEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    thresholdSlider.addEventListener('mousemove', handleThresholdDrag);
 });
 thresholdSlider.addEventListener('touchstart', (e) => {
     e.preventDefault(); // タッチ操作でのスクロールなどを防止
-    // ドラッグ中はtouchmoveイベントでもプレビューを更新するように一時的にリスナーを追加
-    thresholdSlider.addEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
+    thresholdSlider.addEventListener('touchmove', handleThresholdDrag);
 }, { passive: false }); // passive: false で preventDefault を有効に
 thresholdSlider.addEventListener('mouseup', () => {
-    // 一時的に追加したmousemoveリスナーを削除
-    thresholdSlider.removeEventListener('mousemove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    thresholdSlider.removeEventListener('mousemove', handleThresholdDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 thresholdSlider.addEventListener('touchend', () => {
-    // 一時的に追加したtouchmoveリスナーを削除
-    thresholdSlider.removeEventListener('touchmove', () => applyAllAdjustments(correctedMat, previewCanvas, true));
-    // ドラッグ終了時に一度だけ最終的な画像更新を行う
+    thresholdSlider.removeEventListener('touchmove', handleThresholdDrag);
     if (correctedMat) applyAllAdjustments(correctedMat, previewCanvas, true);
 });
 
