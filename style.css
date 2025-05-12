@@ -1,0 +1,160 @@
+body {
+    font-family: 'Inter', sans-serif;
+    overscroll-behavior-y: contain;
+    background-color: #f0f0f0;
+    color: #333;
+}
+.touch-manipulation {
+    touch-action: manipulation;
+}
+.marker {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background-color: rgba(100, 100, 100, 0.7);
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    transform: translate(-50%, -50%); /* Correctly centers the marker */
+    z-index: 10;
+}
+.marker.active {
+    background-color: rgba(0, 122, 255, 0.8); /* Blue active marker */
+    cursor: grabbing;
+}
+#imageCanvas, #previewCanvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    margin: 0 auto;
+    display: block;
+}
+#imageCanvas {
+     cursor: crosshair;
+}
+.loader {
+    border-top-color: #666;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    background: #ccc;
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+input[type="range"]:hover {
+    opacity: 1;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: #555;
+    border-radius: 50%;
+    cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: #555;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+.control-panel {
+    position: sticky;
+    bottom: 0;
+    background-color: rgba(245, 245, 245, 0.95);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid #ddd;
+}
+/* Button base styles */
+.btn-primary {
+    background-color: #4a5568;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #2d3748;
+}
+.btn-secondary {
+    background-color: #a0aec0;
+    color: #2d3748;
+}
+.btn-secondary:hover {
+    background-color: #718096;
+}
+ .btn-warning {
+    background-color: #718096;
+    color: white;
+}
+.btn-warning:hover {
+    background-color: #4a5568;
+}
+/* Custom select style */
+.custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%2F%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 0.65em auto;
+    padding-right: 2.5rem;
+}
+/* Toggle switch styles */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 28px;
+}
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .toggle-slider {
+    background-color: #4a5568;
+}
+input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+}
+
+#magnifier {
+    border-radius: 50%; /* 拡大プレビューを丸くする */
+    overflow: hidden; /* 角を隠す */
+}
