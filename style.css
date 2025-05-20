@@ -15,6 +15,7 @@ body {
     border: 2px solid white;
     border-radius: 50%;
     cursor: grab;
+    touch-action: none;
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
     transform: translate(-50%, -50%); /* Correctly centers the marker */
     z-index: 10;
