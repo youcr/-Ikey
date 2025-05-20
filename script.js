@@ -145,94 +145,127 @@ function handleImageFile(file) {
     if (file) {
         originalImage = new Image();
         originalImage.onload = async () => {
-            if (srcMat) srcMat.delete(); 
-            srcMat = cv.imread(originalImage); 
-            originalImageAspectRatio = originalImage.naturalWidth / originalImage.naturalHeight;
+    try {
+        showLoader(true); // Show loader at the beginning of the process
 
-            setupCroppingCanvas();
+        if (srcMat && !srcMat.isDeleted()) { // Ensure srcMat exists and is not already deleted before deleting
+            srcMat.delete();
+        }
+        srcMat = cv.imread(originalImage);
 
-            croppingSection.style.display = 'block'; 
-            adjustmentSection.style.display = 'none'; 
-            downloadFooter.style.display = 'none'; 
-            correctButton.disabled = false;
-            resetMarkersButton.disabled = false;
-            detectCornersButton.disabled = !cvReady;
+        if (!srcMat || srcMat.empty()) {
+            throw new Error("OpenCV could not read the image data. The file might be corrupted or in an unsupported format.");
+        }
 
-            if (cvReady && srcMat) { 
-                showLoader(true);
-                const success = await runCornerDetectionLogic(false, {
-                    cannyThreshold1: parseInt(cannyThreshold1Slider.value),
-                    cannyThreshold2: parseInt(cannyThreshold2Slider.value),
-                    dilateKernelSize: parseInt(dilateKernelSizeSlider.value),
-                    minAreaRatio: parseFloat(minAreaRatioSlider.value),
-                    significantAreaRatio: parseFloat(significantAreaRatioSlider.value)
-                }, cv, srcMat); 
-                showLoader(false);
-                if (success) {
-                    showUserMessage("四角を自動検出しました。");
-                    if (markers && markers.length === 4) {
-                        const orderedMarkers = orderPointsForTransform(markers); 
-                        const w1 = Math.hypot(orderedMarkers[1].x - orderedMarkers[0].x, orderedMarkers[1].y - orderedMarkers[0].y);
-                        const w2 = Math.hypot(orderedMarkers[2].x - orderedMarkers[3].x, orderedMarkers[2].y - orderedMarkers[3].y);
-                        const h1 = Math.hypot(orderedMarkers[3].x - orderedMarkers[0].x, orderedMarkers[3].y - orderedMarkers[0].y);
-                        const h2 = Math.hypot(orderedMarkers[2].x - orderedMarkers[1].x, orderedMarkers[2].y - orderedMarkers[1].y);
+        // If imread is successful, and srcMat is valid:
+        originalImageAspectRatio = originalImage.naturalWidth / originalImage.naturalHeight;
 
-                        const estimatedWidth = (w1 + w2) / 2;
-                        const estimatedHeight = (h1 + h2) / 2;
+        croppingSection.style.display = 'block';
+        adjustmentSection.style.display = 'none';
+        downloadFooter.style.display = 'none';
 
-                        if (estimatedHeight > 0) {
-                            const detectedAspectRatio = estimatedWidth / estimatedHeight;
-                            const a4LandscapeRatio = 297 / 210; 
-                            const a4PortraitRatio = 210 / 297; 
+        setupCroppingCanvas(); // This function draws the image on canvas and initializes markers
 
-                            if (detectedAspectRatio > 1) {
-                                const diffA4L = Math.abs(detectedAspectRatio - a4LandscapeRatio);
-                                const diffA4P = Math.abs(detectedAspectRatio - a4PortraitRatio);
+        correctButton.disabled = false;
+        resetMarkersButton.disabled = false;
+        detectCornersButton.disabled = !cvReady; // Depends on OpenCV readiness
 
-                                if (diffA4L < diffA4P) {
-                                    aspectRatioSelect.value = "A4L";
-                                    currentAspectRatio = a4LandscapeRatio;
-                                    showUserMessage("検出された四角形に基づいて、アスペクト比をA4横に設定しました。");
-                                } else {
-                                    aspectRatioSelect.value = "A4P";
-                                    currentAspectRatio = a4PortraitRatio;
-                                    showUserMessage("検出された四角形に基づいて、アスペクト比をA4縦に設定しました。");
-                                }
+        if (cvReady && srcMat && !srcMat.isDeleted()) { // Check srcMat again in case setupCroppingCanvas or other steps could invalidate it (unlikely here but good practice)
+            // No separate showLoader(true/false) needed here for runCornerDetectionLogic
+            const detectionParams = {
+                cannyThreshold1: parseInt(cannyThreshold1Slider.value),
+                cannyThreshold2: parseInt(cannyThreshold2Slider.value),
+                dilateKernelSize: parseInt(dilateKernelSizeSlider.value),
+                minAreaRatio: parseFloat(minAreaRatioSlider.value),
+                significantAreaRatio: parseFloat(significantAreaRatioSlider.value)
+            };
+            const success = await runCornerDetectionLogic(false, detectionParams, cv, srcMat);
+
+            if (success) {
+                showUserMessage("四角を自動検出しました。"); // "Corners auto-detected."
+                if (markers && markers.length === 4) {
+                    const orderedMarkers = orderPointsForTransform(markers);
+                    const w1 = Math.hypot(orderedMarkers[1].x - orderedMarkers[0].x, orderedMarkers[1].y - orderedMarkers[0].y);
+                    const w2 = Math.hypot(orderedMarkers[2].x - orderedMarkers[3].x, orderedMarkers[2].y - orderedMarkers[3].y);
+                    const h1 = Math.hypot(orderedMarkers[3].x - orderedMarkers[0].x, orderedMarkers[3].y - orderedMarkers[0].y);
+                    const h2 = Math.hypot(orderedMarkers[2].x - orderedMarkers[1].x, orderedMarkers[2].y - orderedMarkers[1].y);
+
+                    const estimatedWidth = (w1 + w2) / 2;
+                    const estimatedHeight = (h1 + h2) / 2;
+
+                    if (estimatedHeight > 0) {
+                        const detectedAspectRatio = estimatedWidth / estimatedHeight;
+                        const a4LandscapeRatio = 297 / 210;
+                        const a4PortraitRatio = 210 / 297;
+
+                        // Determine best fit for aspect ratio based on detected shape
+                        if (detectedAspectRatio > 1) { // Likely landscape
+                            if (Math.abs(detectedAspectRatio - a4LandscapeRatio) < Math.abs(detectedAspectRatio - a4PortraitRatio)) {
+                                aspectRatioSelect.value = "A4L"; currentAspectRatio = a4LandscapeRatio;
+                                showUserMessage("検出された四角形に基づいて、アスペクト比をA4横に設定しました。");
                             } else {
-                                const diffA4L = Math.abs(detectedAspectRatio - a4LandscapeRatio);
-                                const diffA4P = Math.abs(detectedAspectRatio - a4PortraitRatio);
-
-                                if (diffA4P < diffA4L) {
-                                    aspectRatioSelect.value = "A4P";
-                                    currentAspectRatio = a4PortraitRatio;
-                                    showUserMessage("検出された四角形に基づいて、アスペクト比をA4縦に設定しました。");
-                                } else {
-                                    aspectRatioSelect.value = "A4L";
-                                    currentAspectRatio = a4LandscapeRatio;
-                                    showUserMessage("検出された四角形に基づいて、アスペクト比をA4横に設定しました。");
-                                }
+                                aspectRatioSelect.value = "A4P"; currentAspectRatio = a4PortraitRatio;
+                                showUserMessage("検出された四角形に基づいて、アスペクト比をA4縦に設定しました。");
                             }
-                        } else {
-                            aspectRatioSelect.value = "A4L";
-                            currentAspectRatio = 297 / 210;
-                            showUserMessage("検出された四角形の高さが0のため、アスペクト比をデフォルトのA4横に設定しました。");
+                        } else { // Likely portrait or square
+                             if (Math.abs(detectedAspectRatio - a4PortraitRatio) < Math.abs(detectedAspectRatio - a4LandscapeRatio)) {
+                                aspectRatioSelect.value = "A4P"; currentAspectRatio = a4PortraitRatio;
+                                showUserMessage("検出された四角形に基づいて、アスペクト比をA4縦に設定しました。");
+                            } else {
+                                aspectRatioSelect.value = "A4L"; currentAspectRatio = a4LandscapeRatio;
+                                showUserMessage("検出された四角形に基づいて、アスペクト比をA4横に設定しました。");
+                            }
                         }
                     } else {
-                        aspectRatioSelect.value = "A4L";
-                        currentAspectRatio = 297 / 210;
-                        showUserMessage("四角の自動検出に失敗しました。手動で調整してください。アスペクト比はデフォルトのA4横に設定されました。");
+                        aspectRatioSelect.value = "A4L"; currentAspectRatio = 297 / 210;
+                        showUserMessage("検出された四角形の高さが0のため、アスペクト比をデフォルトのA4横に設定しました。");
                     }
-                } else {
-                    aspectRatioSelect.value = "A4L";
-                    currentAspectRatio = 297 / 210;
-                    showUserMessage("四角の自動検出に失敗しました。手動で調整してください。アスペクト比はデフォルトのA4横に設定されました。");
+                } else { // Markers not 4, or some other issue post-detection success
+                    aspectRatioSelect.value = "A4L"; currentAspectRatio = 297 / 210;
+                    showUserMessage("四角の自動検出に一部成功しましたが、マーカーの数が不正です。手動調整を推奨します。アスペクト比はA4横です。");
                 }
-            } else {
-                console.log("OpenCV not ready or srcMat not available for auto-detection on load.");
-                aspectRatioSelect.value = "A4L";
-                currentAspectRatio = 297 / 210;
+            } else { // runCornerDetectionLogic returned false
+                aspectRatioSelect.value = "A4L"; currentAspectRatio = 297 / 210;
+                showUserMessage("四角の自動検出に失敗しました。手動で調整してください。アスペクト比はデフォルトのA4横に設定されました。");
             }
-        };
+        } else if (srcMat && !srcMat.isDeleted() && !cvReady) { // srcMat loaded, but OpenCV not ready
+            console.log("OpenCV not ready for auto-detection on load, but image is loaded.");
+            aspectRatioSelect.value = "A4L";
+            currentAspectRatio = 297 / 210;
+            showUserMessage("画像は読み込まれましたが、OpenCVの準備ができていないため自動検出はスキップされました。手動で調整し、OpenCVの読み込み完了後に再試行してください。");
+        } else if (!srcMat || srcMat.isDeleted()) {
+            // This case should ideally be caught by the throw new Error earlier if srcMat is null/empty
+            // but as a fallback if something else clears srcMat.
+            console.error("srcMat became invalid before corner detection step.");
+            showUserMessage("画像の読み込み中に問題が発生しました。再度お試しください。", true);
+        }
+
+    } catch (error) {
+        console.error("Error in image loading/initial processing:", error);
+        showUserMessage(`処理エラー: ${error.message || '不明なエラー'}。別の画像で試すか、ページを再読み込みしてください。 (Processing error: ${error.message || 'Unknown error'}. Please try a different image or reload the page.)`, true);
+
+        if (srcMat && !srcMat.isDeleted()) {
+            srcMat.delete();
+        }
+        srcMat = null;
+        // originalImage is the HTMLImageElement, don't nullify it here as it's the source of the event.
+        // Its src is already set. If we need to clear it, other logic might be needed.
+
+        if (croppingSection) croppingSection.style.display = 'none';
+        if (adjustmentSection) adjustmentSection.style.display = 'none';
+        if (downloadFooter) downloadFooter.style.display = 'none';
+
+        if (imageUpload) imageUpload.value = ""; // Reset file input to allow re-upload of same file
+        if (cameraCaptureInput) cameraCaptureInput.value = "";
+
+        if (correctButton) correctButton.disabled = true;
+        if (resetMarkersButton) resetMarkersButton.disabled = true;
+        if (detectCornersButton) detectCornersButton.disabled = true;
+
+    } finally {
+        showLoader(false); // Ensure loader is always hidden, regardless of success or failure
+    }
+};
         originalImage.onerror = () => {
             showUserMessage("画像の読み込みに失敗しました。", true);
             if (srcMat) { srcMat.delete(); srcMat = null; } 
