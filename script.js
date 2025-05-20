@@ -125,6 +125,7 @@ function getFormattedTimestamp() {
 
 // --- OpenCV Initialization ---
 window.onOpenCvReady = function() {
+    console.log('onOpenCvReady fired. Setting cv and cvReady. Current cvReady state:', cvReady, 'window.cv type:', typeof window.cv);
     console.log('OpenCV.js is ready.');
     cv = window.cv; 
     cvReady = true;
@@ -136,6 +137,7 @@ window.onOpenCvReady = function() {
 
 // --- Image Source Handling (Common Logic) ---
 function handleImageFile(file) {
+    console.log('handleImageFile called. cvReady:', cvReady, 'cv object:', typeof cv);
     if (!cvReady) {
         showUserMessage("OpenCV.jsの読み込みが完了していません。少し待ってから再度お試しください。", true);
         imageUpload.value = "";
@@ -146,11 +148,16 @@ function handleImageFile(file) {
         originalImage = new Image();
         originalImage.onload = async () => {
     try {
+        console.log('originalImage.onload started. cvReady:', cvReady, 'cv object:', typeof cv);
         showLoader(true); // Show loader at the beginning of the process
 
         if (srcMat && !srcMat.isDeleted()) { // Ensure srcMat exists and is not already deleted before deleting
             srcMat.delete();
         }
+        if (typeof cv === 'undefined' || !cv.imread || !cv.cvtColor || !cv.Canny || !cv.warpPerspective || !cv.getPerspectiveTransform || !cv.matFromArray || !cv.Point || !cv.Size || !cv.INTER_LINEAR || !cv.BORDER_CONSTANT || !cv.moments || !cv.arcLength || !cv.approxPolyDP || !cv.contourArea || !cv.isContourConvex || !cv.findContours || !cv.RETR_EXTERNAL || !cv.CHAIN_APPROX_SIMPLE) {
+            throw new Error("OpenCV components are not available or cv object is not fully initialized.");
+        }
+        console.log('Attempting cv.imread. cv object type:', typeof cv, 'cv.imread type:', (typeof cv !== 'undefined' ? typeof cv.imread : 'cv undefined'));
         srcMat = cv.imread(originalImage);
 
         if (!srcMat || srcMat.empty()) {
@@ -179,7 +186,7 @@ function handleImageFile(file) {
                 minAreaRatio: parseFloat(minAreaRatioSlider.value),
                 significantAreaRatio: parseFloat(significantAreaRatioSlider.value)
             };
-            const success = await runCornerDetectionLogic(false, detectionParams, cv, srcMat);
+            const success = await runCornerDetectionLogic(true, detectionParams, cv, srcMat);
 
             if (success) {
                 showUserMessage("四角を自動検出しました。"); // "Corners auto-detected."
