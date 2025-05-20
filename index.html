@@ -9,6 +9,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen flex flex-col">
+<div id="onPageLogContainerWrapper" style="position: sticky; top: 0; left: 0; width: 100%; z-index: 10000; background-color: #f0f0f0; border-bottom: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+  <div style="padding: 5px; display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-weight: bold; font-size: 0.9em;">On-Page Logs:</span>
+    <button id="clearOnPageLogButton" style="padding: 2px 8px; font-size: 0.8em; border: 1px solid #aaa; background-color: #e0e0e0; border-radius: 3px; cursor: pointer;">Clear</button>
+  </div>
+  <div id="onPageLogContainer" style="height: 100px; overflow-y: scroll; background-color: #fff; border-top: 1px solid #ccc; padding: 5px; font-family: monospace; font-size: 0.8em; white-space: pre-wrap; word-wrap: break-word;">
+    <!-- Log messages will be appended here -->
+  </div>
+</div>
 
     <header class="bg-gray-800 text-white p-4 shadow-md text-center">
         <h1 class="text-xl font-semibold">Keystone correction</h1>

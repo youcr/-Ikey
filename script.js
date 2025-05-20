@@ -87,6 +87,68 @@ const MAGNIFIER_SIZE_PX = 200;
 const MAGNIFIER_ZOOM_LEVEL = 3; 
 
 
+function logToPage(level, ...args) {
+    const logContainer = document.getElementById('onPageLogContainer');
+    if (!logContainer) {
+        // Fallback to console if the page element doesn't exist for some reason
+        console[level.toLowerCase()] ? console[level.toLowerCase()](...args) : console.log(level, ...args);
+        return;
+    }
+
+    const message = args.map(arg => {
+        if (typeof arg === 'object') {
+            try {
+                return JSON.stringify(arg);
+            } catch (e) {
+                return arg.toString(); // Fallback for complex objects
+            }
+        }
+        return arg;
+    }).join(' ');
+
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
+    logEntry.style.padding = '2px 0';
+    logEntry.style.borderBottom = '1px dotted #eee';
+    logEntry.textContent = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+
+    if (level.toUpperCase() === 'ERROR') {
+        logEntry.style.color = 'red';
+        logEntry.style.fontWeight = 'bold';
+    } else if (level.toUpperCase() === 'WARN') {
+        logEntry.style.color = 'orange';
+    } else if (level.toUpperCase() === 'USER_INFO') {
+        logEntry.style.color = 'blue';
+    } else if (level.toUpperCase() === 'USER_ERROR') {
+        logEntry.style.color = 'darkred';
+        logEntry.style.fontWeight = 'bold';
+    }
+
+
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll to bottom
+
+    // Also log to the browser console
+    const consoleMethod = level.toLowerCase();
+    if (console[consoleMethod]) {
+        console[consoleMethod](...args);
+    } else {
+        console.log(`[${level.toUpperCase()}]`, ...args);
+    }
+}
+
+// Add event listener for the clear log button
+document.addEventListener('DOMContentLoaded', () => {
+    const clearButton = document.getElementById('clearOnPageLogButton');
+    const logContainer = document.getElementById('onPageLogContainer');
+    if (clearButton && logContainer) {
+        clearButton.addEventListener('click', () => {
+            logContainer.innerHTML = '';
+            logToPage('INFO', 'On-page log cleared.');
+        });
+    }
+});
+
 // --- Utility Functions ---
 function showLoader(show) {
     loader.classList.toggle('hidden', !show);
@@ -106,6 +168,12 @@ function showUserMessage(message, isError = false) {
     setTimeout(() => {
         errorMessage.classList.add('hidden');
     }, 5000);
+
+    if (isError) {
+        logToPage('USER_ERROR', 'UserMessage (Error):', message);
+    } else {
+        logToPage('USER_INFO', 'UserMessage (Info):', message);
+    }
 }
 
 function padZero(num) {
@@ -125,7 +193,7 @@ function getFormattedTimestamp() {
 
 // --- OpenCV Initialization ---
 window.onOpenCvReady = function() {
-    console.log('onOpenCvReady fired. Setting cv and cvReady. Current cvReady state:', cvReady, 'window.cv type:', typeof window.cv);
+    logToPage('DEBUG', 'onOpenCvReady fired. Setting cv and cvReady. Current cvReady state:', cvReady, 'window.cv type:', typeof window.cv);
     console.log('OpenCV.js is ready.');
     cv = window.cv; 
     cvReady = true;
@@ -137,7 +205,7 @@ window.onOpenCvReady = function() {
 
 // --- Image Source Handling (Common Logic) ---
 function handleImageFile(file) {
-    console.log('handleImageFile called. cvReady:', cvReady, 'cv object:', typeof cv);
+    logToPage('DEBUG', 'handleImageFile called. cvReady:', cvReady, 'cv object:', typeof cv);
     if (!cvReady) {
         showUserMessage("OpenCV.jsの読み込みが完了していません。少し待ってから再度お試しください。", true);
         imageUpload.value = "";
@@ -148,7 +216,7 @@ function handleImageFile(file) {
         originalImage = new Image();
         originalImage.onload = async () => {
     try {
-        console.log('originalImage.onload started. cvReady:', cvReady, 'cv object:', typeof cv);
+        logToPage('DEBUG', 'originalImage.onload started. cvReady:', cvReady, 'cv object:', typeof cv);
         showLoader(true); // Show loader at the beginning of the process
 
         if (srcMat && !srcMat.isDeleted()) { // Ensure srcMat exists and is not already deleted before deleting
@@ -157,7 +225,7 @@ function handleImageFile(file) {
         if (typeof cv === 'undefined' || !cv.imread || !cv.cvtColor || !cv.Canny || !cv.warpPerspective || !cv.getPerspectiveTransform || !cv.matFromArray || !cv.Point || !cv.Size || !cv.INTER_LINEAR || !cv.BORDER_CONSTANT || !cv.moments || !cv.arcLength || !cv.approxPolyDP || !cv.contourArea || !cv.isContourConvex || !cv.findContours || !cv.RETR_EXTERNAL || !cv.CHAIN_APPROX_SIMPLE) {
             throw new Error("OpenCV components are not available or cv object is not fully initialized.");
         }
-        console.log('Attempting cv.imread. cv object type:', typeof cv, 'cv.imread type:', (typeof cv !== 'undefined' ? typeof cv.imread : 'cv undefined'));
+        logToPage('DEBUG', 'Attempting cv.imread. cv object type:', typeof cv, 'cv.imread type:', (typeof cv !== 'undefined' ? typeof cv.imread : 'cv undefined'));
         srcMat = cv.imread(originalImage);
 
         if (!srcMat || srcMat.empty()) {
@@ -249,6 +317,7 @@ function handleImageFile(file) {
 
     } catch (error) {
         console.error("Error in image loading/initial processing:", error);
+        logToPage('ERROR', "Error in image loading/initial processing:", error.message, error.stack);
         showUserMessage(`処理エラー: ${error.message || '不明なエラー'}。別の画像で試すか、ページを再読み込みしてください。 (Processing error: ${error.message || 'Unknown error'}. Please try a different image or reload the page.)`, true);
 
         if (srcMat && !srcMat.isDeleted()) {
@@ -1108,6 +1177,7 @@ async function runCornerDetectionLogic(showMessages = true, params = {}, cv, src
     } catch (err) {
         if (showMessages) showUserMessage("自動検出中にエラーが発生しました: " + err.message, true);
         console.error("Auto-detect error:", err);
+        logToPage('ERROR', "Auto-detect error:", err.message, err.stack);
         return false;
     }
 }
@@ -1276,6 +1346,7 @@ function autoDetectCornersOpenCV(cv, srcMat, params = {}) {
             }
         } catch (err) {
             console.error(`Error in strategy ${strategy.name}:`, err);
+            logToPage('ERROR', `Error in strategy ${strategy.name}:`, err.message, err.stack);
         } finally {
             if (processedMat && !processedMat.isDeleted()) processedMat.delete();
             if (blurred && !blurred.isDeleted()) blurred.delete();
